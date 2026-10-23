@@ -62,10 +62,10 @@ fall back to fp16 automatically.
 
 Not run yet.
 
-## Data license
+## License
 
-OpenMantra is CC BY-NC 4.0. It is downloaded at run time and not stored here. Adapters trained
-on it are for non-commercial use. Cite:
+The code is MIT (see `LICENSE`). The OpenMantra data is CC BY-NC 4.0: it is downloaded at run
+time and not stored here, and adapters trained on it are for non-commercial use. Cite:
 
 ```
 @article{hinami_aaai_2021,
