@@ -49,7 +49,8 @@ uv run scripts/eval.py Qwen3-1.7B,Qwen3-1.7B-lora,Kimi-K3
 
 On a fresh GPU instance (e.g. AWS `g6.2xlarge` with the Ubuntu Deep Learning AMI),
 `scripts/aws_setup.sh` installs uv, syncs the `finetune` extra, downloads the data and runs the
-smoke test.
+smoke test. The full procedure is in [`docs/aws.md`](docs/aws.md)
+([日本語](docs/aws.ja.md)).
 
 With 8 to 12 GB of GPU memory, train with `--batch-size 1 --grad-accum 8`. GPUs without bf16
 fall back to fp16 automatically.
