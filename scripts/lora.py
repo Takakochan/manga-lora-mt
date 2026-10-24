@@ -37,9 +37,7 @@ Batch = dict[str, torch.Tensor]
 
 
 def device() -> str:
-    if torch.cuda.is_available():
-        return "cuda"
-    return "mps" if torch.backends.mps.is_available() else "cpu"
+    return "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def dtype() -> torch.dtype:

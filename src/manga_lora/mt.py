@@ -1,5 +1,6 @@
 import json
 import random
+import re
 import urllib.request
 from collections.abc import Iterable
 from pathlib import Path
@@ -9,10 +10,13 @@ from sacrebleu.metrics.bleu import BLEU
 from sacrebleu.metrics.chrf import CHRF
 
 ANNOTATION_URL = (
-    "https://raw.githubusercontent.com/mantra-inc/open-mantra-dataset/main/annotation.json"
+    "https://raw.githubusercontent.com/mantra-inc/open-mantra-dataset/"
+    "59341ad922284a8be219b7784feb5a79779a1447/annotation.json"
 )
 OUT = Path("out/mt")
 PAGES = OUT / "pages.jsonl"
+
+FENCE = re.compile(r"^```[\w-]*\s*(.*?)\s*(?:```)?$", re.DOTALL)
 
 SYSTEM = "You translate manga dialogue from Japanese into natural, idiomatic {lang}."
 
@@ -126,9 +130,8 @@ def answer(example: Example) -> str:
 
 def strip_fence(text: str) -> str:
     text = text.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1].rsplit("```", 1)[0]
-    return text
+    fenced = FENCE.match(text)
+    return fenced.group(1) if fenced else text
 
 
 def parse_translations(text: str, expected: int) -> list[str]:

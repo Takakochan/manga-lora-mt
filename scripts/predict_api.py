@@ -44,7 +44,7 @@ async def predict(
             async with asyncio.timeout(settings.step_timeout):
                 text = await translate(example, model, context)
             hyp = parse_translations(text, len(example["ja"]))
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             error = f"{type(e).__name__}: {e}"
     print(f"{example['book']:20} {example['page']:3} {error or 'ok'}", flush=True)
     return {

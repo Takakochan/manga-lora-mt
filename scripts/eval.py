@@ -2,9 +2,26 @@ import json
 
 import fire
 
-from manga_lora.mt import OUT, Prediction, bleu, bootstrap_delta, chrf, load_predictions
+from manga_lora.mt import (
+    OUT,
+    Prediction,
+    bleu,
+    bootstrap_delta,
+    chrf,
+    load_predictions,
+    paired,
+)
 
-COLUMNS = ["run", "pages", "format_errors", "chrf++", "bleu", "sec_per_page", "delta_vs_base"]
+COLUMNS = [
+    "run",
+    "pages",
+    "format_errors",
+    "chrf++",
+    "bleu",
+    "sec_per_page",
+    "paired_pages",
+    "delta_vs_base",
+]
 
 
 def as_list(value: str | list[str]) -> list[str]:
@@ -20,6 +37,7 @@ def score(run: str, preds: list[Prediction], baseline: list[Prediction]) -> dict
         "chrf++": chrf(preds),
         "bleu": bleu(preds),
         "sec_per_page": sum(p["seconds"] for p in preds) / len(preds),
+        "paired_pages": len(paired(preds, baseline)[0]),
         "delta_vs_base": f"{delta:+.1f} [{low:+.1f}, {high:+.1f}]",
     }
 

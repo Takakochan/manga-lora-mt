@@ -60,7 +60,9 @@ def test_prompt_numbers_lines_and_can_drop_context() -> None:
 
 def test_parse_translations_checks_shape() -> None:
     assert parse_translations('```json\n{"translations": ["a", "b"]}\n```', 2) == ["a", "b"]
-    for bad in ('{"translations": ["a"]}', "not json", '{"lines": []}'):
+    assert parse_translations('```json{"translations": ["a", "b"]}```', 2) == ["a", "b"]
+    assert parse_translations('```\n{"translations": ["a", "b"]}', 2) == ["a", "b"]
+    for bad in ('{"translations": ["a"]}', "not json", "```", '{"lines": []}'):
         with pytest.raises(BadOutput):
             parse_translations(bad, 2)
 
