@@ -60,7 +60,30 @@ fall back to fp16 automatically.
 
 ## Results
 
-Not run yet.
+As of 2026-10-24, only the Kimi-K3 baseline has run. The Qwen runs are waiting for a GPU.
+
+| run | pages | format errors | chrF++ | BLEU | sec/page |
+|---|---|---|---|---|---|
+| `Kimi-K3` | 209 | 0 | 35.6 | 16.0 | 0.9 |
+| `Qwen3-1.7B` | not run | | | | |
+| `Qwen3-1.7B-lora` | not run | | | | |
+
+Kimi-K3 chrF++ per held-out book:
+
+| balloon_dream | boureisougi | rasetugari | tencho_isoro | tojime_no_siora |
+|---|---|---|---|---|
+| 38.7 | 35.9 | 33.0 | 36.0 | 34.4 |
+
+Absolute scores are low because the OpenMantra references are loose and often lowercase
+("don't you have aspirations?" vs Kimi-K3's "You really have no dream"). This affects every run
+equally, so the differences between runs are what matter.
+
+### 結果（日本語）
+
+2026-10-24 時点で実行済みなのは Kimi-K3 のベースラインのみで、Qwen の実行は GPU 待ちです。
+Kimi-K3 は全209ページでフォーマットエラー0件、chrF++ 35.6、BLEU 16.0、書籍別の chrF++ は
+33.0〜38.7 でした。OpenMantra の参照訳は意訳寄りで小文字も多いため絶対値は低めですが、
+どの実行にも同じように影響するので、重要なのは実行間の差です。
 
 ## License
 
