@@ -11,7 +11,9 @@ and the evaluation don't need a GPU and can run on any PC.
 1. **Request GPU quota.** New AWS accounts can't launch GPU instances until the quota is raised.
    In the AWS console, open **Service Quotas → Amazon EC2 → Running On-Demand G and VT
    instances** and request **8** (the unit is vCPUs). Quotas are per region, so request it in the
-   region you'll use, e.g. `us-east-1`. Approval can take from a few hours to a couple of days.
+   region you'll launch the instance in. If your account is limited to one region (for example,
+   a project in the new AWS sign-up experience), use that region for every step in this guide.
+   Approval can take from a few hours to a couple of days.
 2. **Check your credits.** In **Billing → Credits**, confirm the credits cover Amazon EC2.
 3. **Create a key pair.** In **EC2 → Key pairs**, create one (`.pem`) and save it on the PC you'll
    connect from. Then run `chmod 400 your-key.pem`.
@@ -29,7 +31,8 @@ In **EC2 → Launch instance**:
 | storage | 100 GB gp3 |
 
 If the launch fails with `VcpuLimitExceeded`, the quota isn't approved yet. If it fails with
-`InsufficientInstanceCapacity`, try another availability zone or region.
+`InsufficientInstanceCapacity`, try another availability zone or `g5.2xlarge`. Use another region
+only if your account allows it.
 
 ## 3. Connect and set up
 
