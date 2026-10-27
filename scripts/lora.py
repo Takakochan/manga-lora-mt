@@ -139,7 +139,7 @@ def train_fold(
         gradient_accumulation_steps=hyper["grad_accum"],
         learning_rate=hyper["lr"],
         lr_scheduler_type="cosine",
-        warmup_ratio=0.05,
+        warmup_steps=0.05,
         logging_steps=5,
         save_strategy="no",
         bf16=half == torch.bfloat16,
