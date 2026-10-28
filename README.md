@@ -65,14 +65,14 @@ fall back to fp16 automatically.
 
 ## Results
 
-Main runs as of 2026-10-27. The Qwen runs used one AWS `g6.2xlarge` (NVIDIA L4); Kimi-K3 ran
-on 2026-10-24. The delta is chrF++ vs `Qwen3-1.7B` with a 95% paired bootstrap over pages.
+Main runs as of 2026-10-28. The Qwen runs used one AWS `g6.2xlarge` (NVIDIA L4). The delta is
+chrF++ vs `Qwen3-1.7B` with a 95% paired bootstrap over pages.
 
 | run | pages | format errors | chrF++ | BLEU | sec/page | chrF++ delta |
 |---|---|---|---|---|---|---|
 | `Qwen3-1.7B` | 209 | 27 | 20.1 | 7.7 | 0.8 | |
 | `Qwen3-1.7B-lora` | 209 | 13 | 24.1 | 10.6 | 1.4 | +4.0 [+1.7, +6.3] |
-| `Kimi-K3` | 209 | 0 | 35.6 | 16.0 | 0.9 | not paired yet |
+| `Kimi-K3` | 209 | 1 | 35.3 | 16.0 | 1.1 | +15.2 [+13.3, +17.2] |
 
 chrF++ per held-out book:
 
@@ -80,12 +80,27 @@ chrF++ per held-out book:
 |---|---|---|---|---|---|
 | `Qwen3-1.7B` | 22.7 | 17.3 | 19.8 | 20.1 | 19.8 |
 | `Qwen3-1.7B-lora` | 27.0 | 23.4 | 22.1 | 26.3 | 21.7 |
-| `Kimi-K3` | 38.7 | 35.9 | 33.0 | 36.0 | 34.4 |
+| `Kimi-K3` | 38.4 | 36.1 | 33.4 | 35.8 | 33.1 |
 
 LoRA improves chrF++ by 4.0 points over the base model, with a 95% interval that excludes zero,
 and improves every held-out book. It also halves the format errors (27 to 13 pages). Kimi-K3 is
 still about 11 points ahead. The LoRA run is slower per page because the adapter is applied
 unmerged with `transformers` generation; serving speed is measured separately in week 3.
+
+The Kimi-K3 rows are from a rerun on 2026-10-28, kept so that every run can be paired page by page.
+The first run on 2026-10-24 scored chrF++ 35.6 with 0 format errors and per-book chrF++ 38.7, 35.9,
+33.0, 36.0 and 34.4; the API is not fully deterministic even with greedy decoding.
+
+Gap to Kimi-K3 (chrF++ delta vs `Kimi-K3`, 95% paired bootstrap over pages):
+
+| run | chrF++ | delta vs `Kimi-K3` |
+|---|---|---|
+| `Qwen3-4B-lora` | 28.4 | -6.9 [-9.0, -5.0] |
+| `Qwen3-4B` | 27.2 | -8.1 [-9.8, -6.5] |
+| `Qwen3-1.7B-lora` | 24.1 | -11.2 [-13.0, -9.4] |
+
+Kimi-K3 is ahead on every held-out book. The smallest gap is on tencho_isoro and
+tojime_no_siora (4.0 points for `Qwen3-4B-lora`), the largest on boureisougi (11.6 points).
 
 Absolute scores are low because the OpenMantra references are loose and often lowercase
 ("don't you have aspirations?" vs Kimi-K3's "You really have no dream"). This affects every run
@@ -144,7 +159,7 @@ chrF++ per held-out book:
 2026-10-27 時点の本実験の結果です。Qwen は AWS の `g6.2xlarge`（NVIDIA L4）で実行しました。
 LoRA によって chrF++ はベースモデルの 20.1 から 24.1 に上がり（差 +4.0、95% 区間 [+1.7, +6.3]）、
 5冊すべてで向上しました。フォーマットエラーも27ページから13ページに半減しました。一方、
-Kimi-K3（chrF++ 35.6、フォーマットエラー0件）とはまだ11ポイントほどの差があります。
+Kimi-K3（chrF++ 35.3、フォーマットエラー1件）とはまだ11ポイントほどの差があります。
 OpenMantra の参照訳は意訳寄りで小文字も多いため絶対値は低めですが、どの実行にも同じように
 影響するので、重要なのは実行間の差です。
 
@@ -159,6 +174,11 @@ OpenMantra の参照訳は意訳寄りで小文字も多いため絶対値は低
   chrF++ も 5.1 から 17.2 に上がりました。Qwen3-4B は LoRA なしでも 1.7B + LoRA を上回り、
   4B に LoRA を足した差（+1.2、[-0.9, +3.1]）は 0 を含みます。Qwen の最高は `Qwen3-4B-lora` の
   28.4 で、Kimi-K3 とは約7ポイントの差です。
+
+Kimi-K3 は 2026-10-28 に作り直した予測の値で、全 run とページ単位で対応を取って比較しています
+（2026-10-24 の初回は chrF++ 35.6、フォーマットエラー0件。greedy でも API の出力は完全には一定
+ではありません）。Kimi-K3 との差は Qwen3-4B-lora が -6.9 [-9.0, -5.0]、Qwen3-4B が
+-8.1 [-9.8, -6.5]、Qwen3-1.7B-lora が -11.2 [-13.0, -9.4] で、5冊すべてで Kimi-K3 が上でした。
 
 ## License
 
