@@ -100,3 +100,9 @@ def test_layouts_match_example_keys_and_keep_box_order() -> None:
     assert list(layouts) == [("a", 1)]
     assert layouts["a", 1]["image"] == DATASET_URL + "images/a/ja/001.jpg"
     assert layouts["a", 1]["boxes"] == [[1, 2, 3, 4], [9, 2, 3, 4]]
+
+
+def test_lowercase_chrf_ignores_case_only_differences() -> None:
+    preds = [pred(0, ["Good Morning"], ["good morning"])]
+    assert chrf(preds, lowercase=True) == 100.0
+    assert chrf(preds) < 100.0

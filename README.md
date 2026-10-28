@@ -160,6 +160,35 @@ chrF++ per held-out book:
 - Seconds per page are not comparable across runs: pages with broken output often generate up to
   the 1024-token limit.
 
+### Case-insensitive scores
+
+After LoRA, over 90% of Qwen's lines start with a lowercase letter ("i'm alive..."), copying the
+OpenMantra references (85% lowercase). The base models and Kimi-K3 do this in 2 to 8% of lines.
+chrF++ is case-sensitive, so part of the LoRA gain above is the casing habit, not translation
+quality. `uv run scripts/eval.py <runs> --lowercase` scores both sides lowercased:
+
+| run | chrF++ | chrF++ lowercased | delta vs `Qwen3-1.7B`, lowercased |
+|---|---|---|---|
+| `Qwen3-1.7B` | 20.1 | 21.9 | |
+| `Qwen3-1.7B-lora` | 24.1 | 24.7 | +2.8 [+0.4, +5.2] |
+| `Qwen3-1.7B-lora-noctx` | 24.8 | 25.4 | +3.5 [+1.4, +5.8] |
+| `Qwen3-0.6B-lora` | 17.2 | 17.6 | -4.3 [-6.5, -1.9] |
+| `Qwen3-4B` | 27.2 | 29.6 | +7.7 [+5.8, +9.7] |
+| `Qwen3-4B-lora` | 28.4 | 29.1 | +7.2 [+5.0, +9.4] |
+| `Kimi-K3` | 35.3 | 38.7 | +16.9 [+14.7, +19.0] |
+
+Paired, lowercased: `Qwen3-4B-lora` vs `Qwen3-4B` is -0.5 [-2.7, +1.5]; vs `Kimi-K3`,
+`Qwen3-4B-lora` is -9.6 [-11.8, -7.5] and `Qwen3-4B` is -9.1 [-10.9, -7.4].
+
+- LoRA still helps Qwen3-1.7B, but the gain shrinks from +4.0 to +2.8, and the lower end of the
+  interval is close to zero.
+- On Qwen3-4B, LoRA gives no gain at all once case is ignored. Its case-sensitive +1.2 was the
+  casing habit.
+- The gap to Kimi-K3 widens to about 9 to 10 points.
+
+[`docs/error_analysis.ja.md`](docs/error_analysis.ja.md) reads 30 sampled lines by hand and lists
+ideas for improvement.
+
 ### 結果（日本語）
 
 2026-10-27 時点の本実験の結果です。Qwen は AWS の `g6.2xlarge`（NVIDIA L4）で実行しました。
@@ -185,6 +214,13 @@ Kimi-K3 は 2026-10-28 に作り直した予測の値で、全 run とページ�
 （2026-10-24 の初回は chrF++ 35.6、フォーマットエラー0件。greedy でも API の出力は完全には一定
 ではありません）。Kimi-K3 との差は Qwen3-4B-lora が -6.9 [-9.0, -5.0]、Qwen3-4B が
 -8.1 [-9.8, -6.5]、Qwen3-1.7B-lora が -11.2 [-13.0, -9.4] で、5冊すべてで Kimi-K3 が上でした。
+
+大文字・小文字をそろえて測り直すと（Case-insensitive scores の表）、結論の一部が変わります。
+LoRA の後の Qwen は正解訳をまねて 90% 以上の行を小文字で始めるようになり、その分 chrF++ が
+上がっていました。そろえて測ると、1.7B での LoRA の効果は +4.0 から +2.8 [+0.4, +5.2] に縮み、
+4B では効果がなくなります（-0.5 [-2.7, +1.5]）。Kimi-K3 との差は 9〜10 ポイントに広がります。
+30 行を読んだ誤りの分析と改善案は [`docs/error_analysis.ja.md`](docs/error_analysis.ja.md) に
+あります。
 
 ## License
 

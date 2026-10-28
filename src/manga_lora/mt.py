@@ -188,14 +188,14 @@ def corpus_lines(preds: list[Prediction]) -> tuple[list[str], list[str]]:
     return hyps, refs
 
 
-def chrf(preds: list[Prediction]) -> float:
+def chrf(preds: list[Prediction], lowercase: bool = False) -> float:
     hyps, refs = corpus_lines(preds)
-    return float(CHRF(word_order=2).corpus_score(hyps, [refs]).score)
+    return float(CHRF(word_order=2, lowercase=lowercase).corpus_score(hyps, [refs]).score)
 
 
-def bleu(preds: list[Prediction]) -> float:
+def bleu(preds: list[Prediction], lowercase: bool = False) -> float:
     hyps, refs = corpus_lines(preds)
-    return float(BLEU().corpus_score(hyps, [refs]).score)
+    return float(BLEU(lowercase=lowercase).corpus_score(hyps, [refs]).score)
 
 
 def page_key(row: Example | Prediction) -> tuple[str, int]:
@@ -209,13 +209,20 @@ def paired(a: list[Prediction], b: list[Prediction]) -> tuple[list[Prediction], 
 
 
 def bootstrap_delta(
-    a: list[Prediction], b: list[Prediction], samples: int = 1000, seed: int = 0
+    a: list[Prediction],
+    b: list[Prediction],
+    samples: int = 1000,
+    seed: int = 0,
+    lowercase: bool = False,
 ) -> tuple[float, float, float]:
     a, b = paired(a, b)
     rng = random.Random(seed)
     deltas = []
     for _ in range(samples):
         picks = [rng.randrange(len(a)) for _ in a]
-        deltas.append(chrf([a[i] for i in picks]) - chrf([b[i] for i in picks]))
+        deltas.append(
+            chrf([a[i] for i in picks], lowercase) - chrf([b[i] for i in picks], lowercase)
+        )
     deltas.sort()
-    return chrf(a) - chrf(b), deltas[int(0.025 * samples)], deltas[int(0.975 * samples) - 1]
+    low, high = deltas[int(0.025 * samples)], deltas[int(0.975 * samples) - 1]
+    return chrf(a, lowercase) - chrf(b, lowercase), low, high
