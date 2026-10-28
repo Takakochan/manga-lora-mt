@@ -45,7 +45,13 @@ uv run scripts/lora.py predict                          # base Qwen3-1.7B, all f
 uv run scripts/lora.py train                            # 5 adapters -> out/mt/adapters/
 uv run scripts/lora.py predict --adapters Qwen3-1.7B-lora
 uv run scripts/eval.py Qwen3-1.7B,Qwen3-1.7B-lora,Kimi-K3
+uv run scripts/viewer.py                                # out/mt/viewer.html
 ```
+
+`scripts/viewer.py` writes a static page that shows each OpenMantra page with its text boxes
+numbered, the gold translation and every run side by side. It can draw one run's translation
+into the boxes, sort pages by the gap to Kimi-K3 and list pages with format errors. Images load
+from the pinned OpenMantra commit on GitHub.
 
 On a fresh GPU instance (e.g. AWS `g6.2xlarge` with the Ubuntu Deep Learning AMI),
 `scripts/aws_setup.sh` installs uv, syncs the `finetune` extra, downloads the data and runs the

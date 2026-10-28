@@ -23,7 +23,8 @@ OpenMantra with leave-one-book-out folds.
   `NEBIUS_API_TOKEN` from `.env`. `src/manga_lora/nebius.py`: the API client.
 - `scripts/data.py` writes `out/mt/pages.jsonl`. `scripts/predict_api.py` runs a Nebius model.
   `scripts/lora.py train|predict` trains and runs Qwen + LoRA (CUDA, `finetune` extra).
-  `scripts/eval.py` prints the comparison. Predictions go to `out/mt/preds/<run>/`, adapters to
+  `scripts/eval.py` prints the comparison. `scripts/viewer.py` writes `out/mt/viewer.html` from
+  `scripts/viewer.html` to compare runs page by page. Predictions go to `out/mt/preds/<run>/`, adapters to
   `out/mt/adapters/<run>/<book>/`.
 - Training and GPU inference run on an Ubuntu machine with a GPU. The Mac (Intel) cannot
   install torch.

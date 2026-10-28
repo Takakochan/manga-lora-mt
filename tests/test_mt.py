@@ -3,10 +3,12 @@ from typing import Any
 import pytest
 
 from manga_lora.mt import (
+    DATASET_URL,
     BadOutput,
     Prediction,
     bootstrap_delta,
     build_examples,
+    build_layouts,
     chrf,
     messages,
     parse_translations,
@@ -81,3 +83,20 @@ def test_bootstrap_delta_brackets_the_observed_gain() -> None:
     delta, low, high = bootstrap_delta(better, worse, samples=200)
     assert delta > 0
     assert low <= delta <= high
+
+
+def test_layouts_match_example_keys_and_keep_box_order() -> None:
+    box = {"x": 1, "y": 2, "w": 3, "h": 4, "text_ja": "はい", "text_en": "yes"}
+    annotation = [
+        {
+            "book_title": "a",
+            "pages": [
+                {"image_paths": {"ja": "images/a/ja/000.jpg"}, "text": []},
+                {"image_paths": {"ja": "images/a/ja/001.jpg"}, "text": [box, {**box, "x": 9}]},
+            ],
+        }
+    ]
+    layouts = build_layouts(annotation)
+    assert list(layouts) == [("a", 1)]
+    assert layouts["a", 1]["image"] == DATASET_URL + "images/a/ja/001.jpg"
+    assert layouts["a", 1]["boxes"] == [[1, 2, 3, 4], [9, 2, 3, 4]]

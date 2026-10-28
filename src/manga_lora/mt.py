@@ -9,10 +9,11 @@ from typing import Any, TypedDict
 from sacrebleu.metrics.bleu import BLEU
 from sacrebleu.metrics.chrf import CHRF
 
-ANNOTATION_URL = (
+DATASET_URL = (
     "https://raw.githubusercontent.com/mantra-inc/open-mantra-dataset/"
-    "59341ad922284a8be219b7784feb5a79779a1447/annotation.json"
+    "59341ad922284a8be219b7784feb5a79779a1447/"
 )
+ANNOTATION_URL = DATASET_URL + "annotation.json"
 OUT = Path("out/mt")
 PAGES = OUT / "pages.jsonl"
 
@@ -49,6 +50,11 @@ class Example(TypedDict):
     context: list[str]
 
 
+class Layout(TypedDict):
+    image: str
+    boxes: list[list[int]]
+
+
 class Prediction(TypedDict):
     book: str
     page: int
@@ -78,9 +84,26 @@ def build_examples(annotation: list[dict[str, Any]]) -> list[Example]:
     return examples
 
 
-def download_examples() -> list[Example]:
+def build_layouts(annotation: list[dict[str, Any]]) -> dict[tuple[str, int], Layout]:
+    layouts: dict[tuple[str, int], Layout] = {}
+    for book in annotation:
+        for index, page in enumerate(book["pages"]):
+            if page["text"]:
+                layouts[book["book_title"], index] = {
+                    "image": DATASET_URL + page["image_paths"]["ja"],
+                    "boxes": [[t["x"], t["y"], t["w"], t["h"]] for t in page["text"]],
+                }
+    return layouts
+
+
+def download_annotation() -> list[dict[str, Any]]:
     with urllib.request.urlopen(ANNOTATION_URL) as response:
-        return build_examples(json.loads(response.read()))
+        annotation: list[dict[str, Any]] = json.loads(response.read())
+    return annotation
+
+
+def download_examples() -> list[Example]:
+    return build_examples(download_annotation())
 
 
 def write_jsonl(path: Path, rows: Iterable[Any]) -> None:
@@ -175,8 +198,8 @@ def bleu(preds: list[Prediction]) -> float:
     return float(BLEU().corpus_score(hyps, [refs]).score)
 
 
-def page_key(pred: Prediction) -> tuple[str, int]:
-    return pred["book"], pred["page"]
+def page_key(row: Example | Prediction) -> tuple[str, int]:
+    return row["book"], row["page"]
 
 
 def paired(a: list[Prediction], b: list[Prediction]) -> tuple[list[Prediction], list[Prediction]]:

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manga MT Viewer</title>
+<style>
+:root {
+  --bg: #f6f5f2; --panel: #ffffff; --text: #1d1d1b; --muted: #6b6a66; --line: #e2e0da;
+  --accent: #2f5fd0; --accent-soft: #e6edfb; --bad: #b4232c; --bad-soft: #fbe9ea;
+  --box: rgba(47, 95, 208, .85); --bubble: #ffffff; --bubble-text: #111111;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --panel: #201f1d; --text: #ecebe7; --muted: #a09e98; --line: #34332f;
+    --accent: #7ea2ff; --accent-soft: #24304d; --bad: #ff8a90; --bad-soft: #3d2124;
+    --box: rgba(126, 162, 255, .9);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161615; --panel: #201f1d; --text: #ecebe7; --muted: #a09e98; --line: #34332f;
+  --accent: #7ea2ff; --accent-soft: #24304d; --bad: #ff8a90; --bad-soft: #3d2124;
+  --box: rgba(126, 162, 255, .9);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.5 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+header {
+  position: sticky; top: 0; z-index: 5; background: var(--panel);
+  border-bottom: 1px solid var(--line); padding: 10px 16px;
+  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
+}
+header h1 { font-size: 15px; margin: 0 8px 0 0; }
+label { color: var(--muted); font-size: 12px; display: inline-flex; gap: 6px; align-items: center; }
+select, button {
+  font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px;
+}
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+.runs { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+main {
+  display: grid; grid-template-columns: minmax(280px, 45%) 1fr; gap: 16px;
+  padding: 16px; max-width: 1500px; margin: 0 auto;
+}
+@media (max-width: 860px) { main { grid-template-columns: 1fr; } .page { position: relative; top: 0; } }
+.page { position: sticky; top: 96px; align-self: start; background: var(--panel); border: 1px solid var(--line); }
+.page img { display: block; width: 100%; height: auto; }
+.box {
+  position: absolute; border: 2px solid var(--box); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.box .num {
+  position: absolute; top: -2px; left: -2px; background: var(--box); color: #fff;
+  font-size: 11px; font-weight: 600; padding: 0 4px; border-radius: 3px 0 4px 0;
+}
+.box.filled { background: var(--bubble); color: var(--bubble-text); }
+.box .fit { padding: 2px; text-align: center; line-height: 1.15; }
+.box.active { outline: 3px solid var(--accent); }
+.meta { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+.scores { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 12px; background: var(--panel); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.table-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; }
+th, td { text-align: left; vertical-align: top; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; color: var(--muted); font-weight: 600; background: var(--panel); position: sticky; top: 0; }
+td.n { color: var(--muted); width: 2.5em; }
+td.ja { min-width: 10em; }
+td.ref { color: var(--muted); }
+td.err { color: var(--bad); font-style: italic; }
+tr.active td { background: var(--accent-soft); }
+tr:last-child td { border-bottom: 0; }
+.hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Manga MT Viewer</h1>
+  <label>本 <select id="book"></select></label>
+  <label>ページ <select id="page"></select></label>
+  <button id="prev" title="前のページ (←)">←</button>
+  <button id="next" title="次のページ (→)">→</button>
+  <label>並び順 <select id="order">
+    <option value="page">ページ順</option>
+    <option value="gap">Kimi-K3 との差が大きい順</option>
+    <option value="error">フォーマットエラーのあるページ</option>
+  </select></label>
+  <label>吹き出しに表示 <select id="overlay"></select></label>
+  <div class="runs" id="runs"></div>
+</header>
+<main>
+  <div class="page" id="figure"><img id="img" alt=""></div>
+  <section>
+    <p class="meta" id="meta"></p>
+    <div class="scores" id="scores"></div>
+    <div class="table-wrap"><table id="table"></table></div>
+    <p class="hint">行にカーソルを合わせると、画像の吹き出しが強調されます。← → でページを移動します。</p>
+  </section>
+</main>
+<script>
+const DATA = __DATA__;
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+const books = [...new Set(DATA.pages.map((p) => p.book))].sort();
+const shown = new Set(JSON.parse(store.get("mtv-runs", "null")) ?? DATA.runs);
+let current = Number(store.get("mtv-index", "0")) || 0;
+
+function gap(p) {
+  const k = p.runs["Kimi-K3"];
+  const best = DATA.runs.filter((r) => r !== "Kimi-K3" && p.runs[r]).map((r) => p.runs[r].chrf);
+  return k && best.length ? k.chrf - Math.max(...best) : -Infinity;
+}
+function hasError(p) { return DATA.runs.some((r) => p.runs[r] && p.runs[r].error); }
+
+function pagesInView() {
+  const book = $("book").value;
+  let list = DATA.pages.map((p, i) => ({ p, i })).filter(({ p }) => book === "*" || p.book === book);
+  const order = $("order").value;
+  if (order === "gap") list.sort((a, b) => gap(b.p) - gap(a.p));
+  if (order === "error") list = list.filter(({ p }) => hasError(p));
+  return list;
+}
+
+function fillPages() {
+  const list = pagesInView();
+  $("page").innerHTML = list.map(({ p, i }) => {
+    const g = gap(p);
+    const extra = $("order").value === "gap" && isFinite(g) ? ` (差 ${g.toFixed(1)})` : "";
+    const label = $("book").value === "*" ? `${p.book} p${p.page}` : `p${p.page}`;
+    return `<option value="${i}">${label}${extra}</option>`;
+  }).join("");
+  if (!list.some(({ i }) => i === current) && list.length) current = list[0].i;
+  $("page").value = String(current);
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function overlayLines(p) {
+  const v = $("overlay").value;
+  if (v === "none") return null;
+  if (v === "ref") return p.en;
+  const t = p.runs[v];
+  return t ? t.lines : null;
+}
+
+function fitText(el) {
+  const fit = el.querySelector(".fit");
+  if (!fit) return;
+  let size = Math.min(22, el.clientHeight * 0.5);
+  fit.style.fontSize = size + "px";
+  while (size > 6 && (fit.scrollHeight > el.clientHeight || fit.scrollWidth > el.clientWidth)) {
+    size -= 0.5;
+    fit.style.fontSize = size + "px";
+  }
+}
+
+function drawBoxes(p) {
+  const img = $("img");
+  $("figure").querySelectorAll(".box").forEach((b) => b.remove());
+  if (!img.naturalWidth) return;
+  const s = img.clientWidth / img.naturalWidth;
+  const lines = overlayLines(p);
+  p.boxes.forEach(([x, y, w, h], n) => {
+    const el = document.createElement("div");
+    el.className = "box" + (lines ? " filled" : "");
+    el.dataset.n = n;
+    Object.assign(el.style, { left: x * s + "px", top: y * s + "px", width: w * s + "px", height: h * s + "px" });
+    el.innerHTML = `<span class="num">${n + 1}</span>` + (lines ? `<span class="fit">${esc(lines[n] ?? "")}</span>` : "");
+    el.addEventListener("mouseenter", () => highlight(n));
+    el.addEventListener("mouseleave", () => highlight(-1));
+    $("figure").appendChild(el);
+    fitText(el);
+  });
+}
+
+function highlight(n) {
+  document.querySelectorAll(".box").forEach((b) => b.classList.toggle("active", Number(b.dataset.n) === n));
+  document.querySelectorAll("tr[data-n]").forEach((r) => r.classList.toggle("active", Number(r.dataset.n) === n));
+}
+
+function render() {
+  const p = DATA.pages[current];
+  store.set("mtv-index", String(current));
+  const runs = DATA.runs.filter((r) => shown.has(r));
+  $("meta").textContent = `${p.book} / page ${p.page} / ${p.ja.length} 行`;
+  $("scores").innerHTML = runs.map((r) => {
+    const t = p.runs[r];
+    if (!t) return `<span class="chip">${esc(r)}: なし</span>`;
+    return `<span class="chip${t.error ? " bad" : ""}">${esc(r)}: chrF++ ${t.chrf.toFixed(1)}${t.error ? " ・ フォーマットエラー" : ""}</span>`;
+  }).join("");
+  const head = `<tr><th>#</th><th>日本語</th><th>正解訳</th>${runs.map((r) => `<th>${esc(r)}</th>`).join("")}</tr>`;
+  const body = p.ja.map((ja, n) => {
+    const cells = runs.map((r) => {
+      const t = p.runs[r];
+      if (!t) return "<td>—</td>";
+      if (t.error) return n === 0 ? `<td class="err" rowspan="${p.ja.length}">${esc(t.error)}</td>` : "";
+      return `<td>${esc(t.lines[n])}</td>`;
+    }).join("");
+    return `<tr data-n="${n}"><td class="n">${n + 1}</td><td class="ja">${esc(ja)}</td><td class="ref">${esc(p.en[n])}</td>${cells}</tr>`;
+  }).join("");
+  $("table").innerHTML = head + body;
+  $("table").querySelectorAll("tr[data-n]").forEach((r) => {
+    r.addEventListener("mouseenter", () => highlight(Number(r.dataset.n)));
+    r.addEventListener("mouseleave", () => highlight(-1));
+  });
+  const img = $("img");
+  if (img.dataset.src !== p.image) {
+    img.dataset.src = p.image;
+    img.src = p.image;
+    img.alt = `${p.book} page ${p.page}`;
+  } else {
+    drawBoxes(p);
+  }
+}
+
+function step(d) {
+  const list = pagesInView();
+  const at = list.findIndex(({ i }) => i === current);
+  const next = list[at + d];
+  if (!next) return;
+  current = next.i;
+  $("page").value = String(current);
+  render();
+}
+
+$("book").innerHTML = `<option value="*">すべて</option>` + books.map((b) => `<option>${esc(b)}</option>`).join("");
+$("book").value = store.get("mtv-book", "*");
+if (!$("book").value) $("book").value = "*";
+$("overlay").innerHTML = `<option value="none">番号だけ</option><option value="ref">正解訳</option>` +
+  DATA.runs.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`).join("");
+$("overlay").value = store.get("mtv-overlay", "none");
+if (!$("overlay").value) $("overlay").value = "none";
+$("runs").innerHTML = DATA.runs.map((r) =>
+  `<label><input type="checkbox" value="${esc(r)}"${shown.has(r) ? " checked" : ""}>${esc(r)}</label>`).join("");
+$("runs").addEventListener("change", (e) => {
+  e.target.checked ? shown.add(e.target.value) : shown.delete(e.target.value);
+  store.set("mtv-runs", JSON.stringify([...shown]));
+  render();
+});
+$("book").addEventListener("change", () => { store.set("mtv-book", $("book").value); fillPages(); render(); });
+$("order").addEventListener("change", () => { fillPages(); render(); });
+$("page").addEventListener("change", () => { current = Number($("page").value); render(); });
+$("overlay").addEventListener("change", () => { store.set("mtv-overlay", $("overlay").value); render(); });
+$("prev").addEventListener("click", () => step(-1));
+$("next").addEventListener("click", () => step(1));
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "SELECT") return;
+  if (e.key === "ArrowLeft") step(-1);
+  if (e.key === "ArrowRight") step(1);
+});
+$("img").addEventListener("load", () => drawBoxes(DATA.pages[current]));
+window.addEventListener("resize", () => drawBoxes(DATA.pages[current]));
+fillPages();
+render();
+</script>
+</body>
+</html>
