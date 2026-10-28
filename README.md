@@ -3,7 +3,7 @@
 Does a small Qwen model, LoRA-tuned on manga dialogue, translate Japanese manga pages better
 than the same model untuned, and how close does it get to a large hosted model (Kimi-K3)?
 
-The setting comes from [Fukidashi](https://github.com/IlyaGusev/fukidashi), a manga
+The setting comes from Fukidashi, a manga
 translation app I worked on in a team. This repository is a separate, individual experiment
 and contains no Fukidashi code. It reuses one idea from the app: translate a page together with
 the previous page's text as context.
